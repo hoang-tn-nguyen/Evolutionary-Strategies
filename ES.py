@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+# --- Core Modules ---
 class Expectation(nn.Module):
     def __init__(self):
         '''
@@ -23,6 +24,7 @@ class NormalAutograd(torch.autograd.Function):
         ctx.save_for_backward(eps, sigma)
         theta = mu + sigma * eps 
         ratio = torch.ones(len(eps), dtype=torch.float32, device=eps.device) / len(eps)
+        ctx.mark_non_differentiable(theta)
         return theta, ratio
 
     @staticmethod
@@ -54,35 +56,46 @@ class Normal(nn.Module):
         theta, ratio = NormalAutograd.apply(mu, sigma, size, self.random_state)
         return theta, ratio
     
-if __name__ == "__main__":
-    from tqdm import tqdm
-    solution = torch.tensor([0.5, 1, -0.9], device='cpu')
-    def f(w):
-        return ((w - solution)**2).sum(dim=-1)
+# --- Helper Functions ---
+def model_to_params(model, flatten=True):
+    '''
+    Get all parameters of the model
+    Input:
+        model: nn.Module: the input model
+    Return:
+        params: list: A list of parameter groups
+    '''
+    params = []
+    for param in model.parameters():
+        if flatten:
+            params.append(param.view(-1))
+        else:
+            params.append(param)
+    return params
 
-    npop = 500     # population size
-    mu = torch.randn(3, requires_grad=True, device='cpu')
-    sigma = torch.randn(3, requires_grad=True, device='cpu')
-    p = Normal(mu.device)
-    expectation = Expectation()
-    optimizer = torch.optim.Adam([mu, sigma])
-    
-    best_mean = 1e9
-    best_mu = mu
-    prog_bar = tqdm(range(10000))
-    for i in prog_bar: 
-        samples, ratio = p(mu, sigma, npop) # (N,3)
-        fitness = f(samples)
-        scaled_fitness = (fitness - fitness.mean()) / (fitness.std())
-        mean = expectation(scaled_fitness, ratio)
-        
-        optimizer.zero_grad()
-        mean.backward()
-        optimizer.step()
-        
-        if mean < best_mean:
-            best_mean = mean
-            best_mu = mu
-            
-        prog_bar.set_description("step: {}, mean fitness: {:0.5}, std fitness: {:0.5}".format(i, float(fitness.mean()), float(fitness.std())))
-    print(best_mu)
+def params_to_model(params, model):
+    '''
+    Import parameters to the model (inplace/overwriting)
+    Input:
+        params: list or torch.Tensor: A list of parameter groups or a 1-D tensor concatenating all parameter groups 
+        model: nn.Module: the input model
+    Return:
+        model: nn.Module: the newly updated model
+    '''
+    if isinstance(params, list): # A list of 1-D Tensors
+        for i, param in enumerate(model.parameters()):
+            param[:] = params[i].view(*param.shape) # overwrite on the existing sequence
+    elif isinstance(params, torch.Tensor):
+        # Make sure that this is 1-D Tensor (i.e. a concatenation of multiple 1-D tensors)
+        params = params.view(-1) 
+        s = 0 # Start of sequence
+        for param in model.parameters():
+            e = s + param.numel() # End of sequence
+            param[:] = params[s:e].view(*param.shape) # overwrite on the existing sequence
+            s = e
+    else:
+        raise TypeError('params must be a list of 1-D torch.Tensor or 1-D torch.Tensor')
+    return model
+
+def normalize(input, eps=1e-9):
+    return (input - input.mean()) / (input.std() + eps)
