@@ -7,3 +7,6 @@ An implementation of "Evolution Strategies as a Scalable Alternative to Reinforc
 - Import/Export parameters to working models
 
 *Note: ES is very sensitive to hyper-parameters such as population size, mean, standard deviation, and learning rate.*
+
+## To do
+Implementing Novelty Search "Improving Exploration in Evolution Strategies for Deep Reinforcement Learning via a Population of Novelty-Seeking Agents"
