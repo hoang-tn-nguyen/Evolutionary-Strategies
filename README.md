@@ -13,6 +13,5 @@ Implementing Novelty Search "Improving Exploration in Evolution Strategies for D
 
 ## References
 [1] Conti, E., Madhavan, V., Such, F. P., Lehman, J., Stanley, K., & Clune, J. (2018). Improving exploration in evolution strategies for deep reinforcement learning via a population of novelty-seeking agents. In Advances in neural information processing systems (pp. 5027-5038).
-
 [2] Salimans, T., Ho, J., Chen, X., Sidor, S., & Sutskever, I. (2017). Evolution strategies as a scalable alternative to reinforcement learning. arXiv preprint arXiv:1703.03864.
 	
