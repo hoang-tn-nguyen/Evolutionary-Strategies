@@ -6,4 +6,4 @@ This implementation supports
 - Compute gradients w.r.t. mean and standard deviation (the original paper used a constant standard deviation)
 - Import/Export parameters to working models
 
-*Note: ES is very sensitive to the initial mean, standard deviation, and learning rate. Hyper-parameter tuning is very important.*
+*Note: ES is very sensitive to hyper-parameters such as mean, standard deviation, and learning rate.*
